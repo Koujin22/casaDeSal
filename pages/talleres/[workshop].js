@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react'
 import {GraphQLClient, gql} from 'graphql-request'
 import MarkdownIt from 'markdown-it/lib';
 
-export default function workshop({data}) {
+export default function Workshop({data}) {
 
   const {taller} = data;
   const [description, setDescription] = useState("");
@@ -10,7 +10,7 @@ export default function workshop({data}) {
   useEffect(() => {
     const md = new MarkdownIt();
     setDescription(md.render(taller.descripcion));
-  }, [])
+  })
   
 
   return (
