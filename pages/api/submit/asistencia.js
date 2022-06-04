@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             if(currentValues[id] === "Inscrito"){
                 currentValues[id] = "Asistido";
                 console.log("Current values: ", currentValues);
-                UpdateToSheet(currentValues, "A"+range, jwtClient);
+                await UpdateToSheet(currentValues, "A"+range, jwtClient);
                 res.status(200).json({msg:"Asistencia tomada correctamente!"})
             } else if(currentValues[id]==="Asistido"){
                 console.log("El usuario ya tiene asistencia")
@@ -88,7 +88,7 @@ function AuthToGoogle(){
     return jwtClient;
 }
 
-function UpdateToSheet(values, range, auth){
+async function UpdateToSheet(values, range, auth){
     const body = {
         values:  [
             Object.values(values)
@@ -96,14 +96,14 @@ function UpdateToSheet(values, range, auth){
     };
 
     //saving in sheets
-    sheets.spreadsheets.values.update({
+    let response = await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId,
         valueInputOption: "RAW",
         range: "Sheet1!"+range,
         auth: auth,
         resource: body
-    }).then((response) => {
-        var result = response.data;
-        console.log(`${result.updatedCells} cells updated.`)
-    });
+    })
+    
+    var result = response.data;
+    console.log(`${result.updatedCells} cells updated.`)
 }
