@@ -6,7 +6,7 @@ const spreadsheetId = process.env.SPREADSHEET_ID;
 const sheets = google.sheets('v4');
 
 export default async function handler(req, res) {
-    const {id} = req.query;
+    const {id, Nombre, email} = req.query;
     try{
         //Auth to google 
         console.log("Logging to google cloud services");
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
         if(!headers.includes(id)){
             console.log("Doesnt exists, Adding it to sheets");
             headers.push(id);
-            UpdateHeaders(jwtClient, headers);
+            await UpdateHeaders(jwtClient, headers);
         }
 
         if(exists){
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
             if(modified){
                 console.log("Saving in sheet new values");
                 console.log("Current values: ", currentValues);
-                UpdateToSheet(currentValues, "A"+range, jwtClient);
+                await UpdateToSheet(currentValues, "A"+range, jwtClient);
             }
         }else {
             //We change the id attribute to match sheets schema
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
             })
             //we create a new entry
             //Append to google sheet
-            AppendToSheet(newValues, jwtClient);
+            await AppendToSheet(newValues, jwtClient);
         }  
     }catch(err){
         console.error(err);
@@ -80,17 +80,11 @@ export default async function handler(req, res) {
             to: 'emiliano@bfgo.mx', // Change to your recipient
             from: 'emilianohhgg@gmail.com', // Change to your verified sender
             subject: 'Sending with SendGrid is Fun@',
-            text: 'and easy to do anywhere, even with Node.js',
-            html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+            text: `and easy to do anywhere, even with Node.js. Nombre: ${Nombre}, Correo: ${email}`,
+            html: `<strong>and easy to do anywhere, even with Node.js Nombre: ${Nombre}, Correo: ${email}</strong> `,
           }
-        sgMail
-          .send(msg)
-          .then(() => {
-            console.log('Email sent')
-          })
-          .catch((error) => {
-            console.error(error)
-          })
+        const response = await sgMail.send(msg)
+        console.log(response); 
         res.redirect("/completed", 302);
         //res.redirect("/talleres/prueba", 302);
 
@@ -105,16 +99,15 @@ async function UpdateHeaders(auth, headers){
     };
 
     //saving in sheets
-    sheets.spreadsheets.values.update({
+    let response = await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId,
         valueInputOption: "RAW",
         range: "Sheet1!A1",
         auth: auth,
         resource: body
-    }).then((response) => {
-        var result = response.data;
-        console.log(`${result.updatedCells} cells updated.`)
-    });
+    })
+    var result = response.data;
+    console.log(`${result.updatedCells} cells updated.`)
 }
 
 async function CheckEmailExists({email}, auth){
@@ -153,7 +146,7 @@ function AuthToGoogle(){
     return jwtClient;
 }
 
-function AppendToSheet(values, auth){
+async function AppendToSheet(values, auth){
     const body = {
         values:  [
             values
@@ -161,19 +154,18 @@ function AppendToSheet(values, auth){
     };
 
     //saving in sheets
-    sheets.spreadsheets.values.append({
+    let response = await sheets.spreadsheets.values.append({
         spreadsheetId: spreadsheetId,
         valueInputOption: "RAW",
         range: "Sheet1",
         auth: auth,
         resource: body
-    }).then((response) => {
-        var result = response.data;
-        console.log(`${result.updates.updatedCells} cells appended.`)
-    });
+    })
+    var result = response.data;
+    console.log(`${result.updates.updatedCells} cells appended.`)
 }
 
-function UpdateToSheet(values, range, auth){
+async function UpdateToSheet(values, range, auth){
     const body = {
         values:  [
             Object.values(values)
@@ -181,14 +173,13 @@ function UpdateToSheet(values, range, auth){
     };
 
     //saving in sheets
-    sheets.spreadsheets.values.update({
+    let response = await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId,
         valueInputOption: "RAW",
         range: "Sheet1!"+range,
         auth: auth,
         resource: body
-    }).then((response) => {
-        var result = response.data;
-        console.log(`${result.updatedCells} cells updated.`)
-    });
+    })
+    var result = response.data;
+    console.log(`${result.updatedCells} cells updated.`)
 }
